@@ -57,7 +57,6 @@ async function signedIn(
   // mock all request not just to supabase, but also to the functions endpoint, so we can mock the delete-account function
   await page.route("**/*.supabase.co/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
-    console.log("MOCKING REQUEST:", route.request().method(), path);
     const headers = {
       "access-control-allow-origin": "*",
       "access-control-allow-headers": "*",
@@ -69,12 +68,7 @@ async function signedIn(
     }
     let data = [];
     if (path.includes("/auth/")) data = user;
-    if (path.includes("/folders")) {
-      console.log("FOLDER REQUEST:", route.request().url());
-      console.log("MOCKED FOLDERS:", folders);
-
-      data = folders;
-    }
+    if (path.includes("/folders")) data = folders;
     if (path.includes("/files")) data = files;
     if (path.includes("/profiles"))
       data = {
@@ -87,52 +81,6 @@ async function signedIn(
     await route.fulfill({
       status: 200,
       headers: { ...headers, "content-type": "application/json" },
-      body: JSON.stringify(data),
-    });
-  });
-
-  await page.route(`**/*.supabase.co/**`, async (route) => {
-    const request = route.request();
-    const url = new URL(request.url());
-
-    const headers = {
-      "access-control-allow-origin": "*",
-      "access-control-allow-headers": "*",
-      "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS",
-    };
-
-    if (request.method() === "OPTIONS") {
-      await route.fulfill({
-        status: 204,
-        headers,
-      });
-      return;
-    }
-
-    let data = [];
-
-    if (url.pathname.includes("/auth/")) {
-      data = user;
-    } else if (url.pathname.includes("/folders")) {
-      data = folders;
-    } else if (url.pathname.includes("/files")) {
-      data = files;
-    } else if (url.pathname.includes("/profiles")) {
-      data = {
-        id,
-        display_name: hostile,
-        avatar_url: "/avatars/avatar-01.jpeg",
-        theme: "pixel-night",
-        notifications: true,
-      };
-    }
-
-    await route.fulfill({
-      status: 200,
-      headers: {
-        ...headers,
-        "content-type": "application/json",
-      },
       body: JSON.stringify(data),
     });
   });
